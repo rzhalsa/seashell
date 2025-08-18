@@ -1,6 +1,6 @@
 /* seashell.c
  *
- * SeaShell is a UNIX shell which supports the following features:
+ * SeaShell is a Linux shell which supports the following features:
  *
  *     1. The built-in commands cd and exit.
  *
