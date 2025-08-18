@@ -32,18 +32,15 @@
  *
  * Credits and Acknowledgements:
  *
- *     1. Lines 136, 272, 306, 313, 381, 394, 404, 424, 489, 498, 507, 568, and 587
- *        were written with the help of ChatGPT.
+ *     1. The following lines were written with the help of ChatGPT
  *
- *            Specifically:
+ *            1. The strtok() function and the delimeters for it in parse_input.
  *
- *                1. The strtok() function and the delimeters for it in parse_input.
+ *            2. The isatty() function in main and get_input.
  *
- *                2. The isatty() function in main and get_input.
+ *            3. The dup2() function in pipe_command and redirect.
  *
- *                3. The dup2() function in pipe_command and redirect.
- *
- *                4. The strdup() function in enqueue.
+ *            4. The strdup() function in enqueue.
  *
  *     2. Many of the error messages in SeaShell are copies of the
  *        same messages in Bash.
@@ -56,9 +53,7 @@
  * Known Issues:
  *     
  *    No known issues as of 4/29/25, though I will admit I have not bug tested the new delay
- *    feature to the same extent I bug tested the original shell creation. Please let me know
- *    if you find any bugs during testing, as I plan to continue developing this shell even after
- *    our OS class ends.
+ *    feature to the same extent I bug tested the original shell creation. 
  *
  * Other Notes:
  *
@@ -69,7 +64,7 @@
  *        No compilation errors or warnings were observed as of April 29th, 2025.
  *
  * Author: Ryan McHenry
- * Date: March 21, 2025
+ * Original Creation Date: March 21, 2025
  */
 
 #define MAX_ARGS 64
@@ -372,8 +367,15 @@ void init_queue(struct ThreadQueue *queue) {
 
 
 void enqueue(struct DelayedCommand *cmd, struct ThreadQueue *queue, int token_counter) {
-    int inserted = 0;
+    int inserted = 0; // flag used so no command is inserted more than once
 
+    /* the queue to hold delayed commands is ordered by the time when the delayed commands
+     * will execute, that is, the command with the shortest remaining delay time will be
+     * at the front of the queue, and the command with the longest remaining time until
+     * execution will be at the end of the queue
+     */
+
+    // insert command into the queue if queue is empty
     if(queue->command_amt == 0) {
         queue->commands[0] = *cmd;
         queue->commands[0].args = malloc(MAX_ARGS * sizeof(char *));
@@ -382,12 +384,15 @@ void enqueue(struct DelayedCommand *cmd, struct ThreadQueue *queue, int token_co
         }
         queue->command_amt++;
     } else {
+        // Insert command into queue, insert location determined by delay amount
         for(int i = 0; i < queue->command_amt; i++) {
             if(cmd->delay_amt < queue->commands[i].delay_amt && queue->command_amt < MAX_ARGS) {
-                inserted = 1;
+                inserted = 1; 
+                // move all commands with longer delay amount one index back in queue
                 for(int j = queue->command_amt - 1; j >= i; j--) {
                     queue->commands[j + 1] = queue->commands[j];
                 }
+                // insert new delayed command
                 queue->commands[i] = *cmd;
                 queue->commands[i].args = malloc(MAX_ARGS * sizeof(char *));
                 for(int k = 0; k < token_counter; k++) {
@@ -397,6 +402,7 @@ void enqueue(struct DelayedCommand *cmd, struct ThreadQueue *queue, int token_co
                 break;
             }
         }
+        // insert command into end of queue
         if(inserted == 0 && queue->command_amt < MAX_ARGS) {
             queue->commands[queue->command_amt] = *cmd;
             queue->commands[queue->command_amt].args = malloc(MAX_ARGS * sizeof(char *));
@@ -418,11 +424,14 @@ void *poll(void *t) {
     struct ThreadQueue *queue = ((struct ThreadQueue *) t);
 
     while(1) {
+        // Simple polling, sleep 1 second between each queue poll
         sleep(1);
 
         pthread_mutex_lock(&mutex);
         if(queue->commands[0].args != NULL) {
+            // Execute command at front of queue if the delay time amount has passed
             if(queue->commands[0].delay_amt < time(NULL)) {
+                
                 check_redirection(queue->commands[0].args, &queue->commands[0].input_redirect,
                                   &queue->commands[0].output_redirect, &queue->commands[0].append_redirect,
                                   &queue->commands[0].index, &queue->commands[0].outdex,
