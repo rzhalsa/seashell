@@ -1,5 +1,5 @@
 # seashell
-SeaShell is a custom UNIX shell written for my Operating Systems class. The name SeaShell was chosen by my professor, Drue Coles.
+SeaShell is a custom Linux shell written for my Operating Systems class. The name SeaShell was chosen by my professor, Drue Coles.
 
 SeaShell supports the following features:
 
