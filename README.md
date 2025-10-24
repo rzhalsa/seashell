@@ -1,4 +1,5 @@
-# seashell
+# SeaShell
+
 SeaShell is a custom Linux shell written for my Operating Systems class.
 
 SeaShell supports the following features:
@@ -30,3 +31,7 @@ The basic structure of the shell is an infinite while loop that:
   4. Parses the command line.
  
   5. Takes the appropriate action.
+
+## Installation
+
+Download the source C file and compile it using your C compiler of choice.
