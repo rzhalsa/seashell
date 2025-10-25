@@ -34,4 +34,7 @@ The basic structure of the shell is an infinite while loop that:
 
 ## Installation
 
-Download the source C file and compile it using your C compiler of choice.
+Download the source C file and compile it using your C compiler of choice. During
+development the shell was compiled with the following line:
+
+`gcc -std=c11 -o seashell seashell.c -Wall -Wextra -lphread`
