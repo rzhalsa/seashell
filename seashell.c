@@ -127,6 +127,28 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 //======================================================================================
 
 
+/**
+ * @brief main function that contains all vars, initializes everything, and contains the
+ * main loop of the shell.
+ * 
+ * @return 0 on successfully terminating.
+ *
+ * @details  Declares vars used by all helper functions, sets up the signal handler to catch child
+ * processes, initializes the ThreadQueue struct variable as well as the background thread
+ * used within the helper function poll().
+ *
+ * Contains the main loop of the shell itself. The each time the shell initializes a new
+ * iteration of the while loop, it executes the following steps:
+ *
+ *   1. Reset all variables from the previous iteration.
+ *   2. Receive the user input.
+ *   3. Parse the user input.
+ *   4. Further parse the input to check for redirection or piping.
+ *   5. If reaching this step without any errors, execute the provided command.
+ *
+ * After exiting the main loop of the shell, memory is freed and the background thread is
+ * joined.
+ */
 int main() {
     if(isatty(STDIN_FILENO))
         startup();
@@ -208,6 +230,9 @@ int main() {
 //======================================================================================
 
 
+/**
+ * @brief Formats and prints the text that is shown when the shell is launched.
+ */
 void startup() {
     printf("\n Welcome to\n");
 
@@ -224,6 +249,22 @@ void startup() {
 //======================================================================================
 
 
+/**
+ * @brief Resets the values of all variables when starting a new iteration in the main
+ * shell loop.
+ *
+ * @param index Pointer to the integer variable to reset named index.
+ * @param outdex Pointer to the integer variable to reset named outdex.
+ * @param appendex Pointer to the integer variable to reset named appendex.
+ * @param background Pointer to the integer variable to reset named background.
+ * @param input_redirect Pointer to the integer variable to reset named input_redirect.
+ * @param output_redirect Pointer to the integer variable to reset named output_redirect.
+ * @param append_redirect Pointer to the integer variable to reset named append_redirect.
+ * @param pipe_flag Pointer to the integer variable to reset named pipe_flag.
+ * @param args 2D pointer to the character array to reset named args.
+ * @param delay Pointer to the integer variable to reset named delay.
+ * @param cmd Pointer to the DelayedCommand struct variable to reset named cmd.
+ */
 void reset_vars(int *index, int *outdex, int *appenddex, int *background, int *input_redirect,
                 int *output_redirect, int *append_redirect, int *pipe_flag, char **args,
                 int *delay, struct DelayedCommand *cmd) {
@@ -259,6 +300,17 @@ void reset_vars(int *index, int *outdex, int *appenddex, int *background, int *i
 //======================================================================================
 
 
+/**
+ * @brief Gets and returns the user input.
+ *
+ * @param display Integer flag to determine whether the shell prompt is displayed or not.
+ *
+ * @return A pointer to a char array consisting of the user input.
+ *
+ * @details Displays the user prompt for the shell if display is set to 1. The function then
+ * reads the user input using getline(), and then trims off the newline character if present
+ * by setting it to the null character.
+ */
 char *get_input(int display) {
     size_t buf_size = 0;    // size of buffer (dynamically resized)
     char *buffer = NULL;    // buffer to store read values and cwd
@@ -292,6 +344,30 @@ char *get_input(int display) {
 //======================================================================================
 
 
+/**
+ * @brief Parses the user input obtained in get_input().
+ * @param input Pointer to char array consisting of the user input.
+ * @param args 2D pointer to a char array to which the individual arguments of the user
+ * input will be added to in this function.
+ * @param background Integer flag used to show if the command is a background process.
+ * @param delay Integer flag used to show if the command is delayed.
+ * @param cmd DelayedCommand struct variable used to store the command if it is delayed.
+ * @param queue ThreadQueue struct variable used to enqueue the command stored to cmd if
+ * the command is delayed.
+ *
+ * @details Parses the user input using strtok() and strcmp(). The function first
+ * parses the command itself as args[0], and then parses all arguments if they exist.
+ *
+ * The function then checks if the user designates the command to run in the 
+ * background using &. If yes, remove the & character from args, set the value of
+ * the integer flag named background to be 1, and subtract 1 from token_counter.
+ *
+ * The function then checks if args[0] is "delay", which designates that the command
+ * is delayed. If so, extract the delay amount using atoi(args[1]), calculate the
+ * time the delayed command will run at as the sum of delay_time + time(NULL), then
+ * remove "delay" and the delay time from args and subtract 2 from token_counter.
+ * Finally, use enqueue() to add the DelayedCommand cmd to the ThreadQueue queue.
+ */
 void parse_input(char *input, char **args, int *background, int *delay, 
                  struct DelayedCommand *cmd, struct ThreadQueue *queue) {
     char *token = NULL;      // string to store tokens
@@ -335,6 +411,7 @@ void parse_input(char *input, char **args, int *background, int *delay,
             if(cmd->delay_amt == time(NULL))
                 *delay = -1;
 
+            // Remove "delay" and delay time from args
             for(int i = 2; args[i] != NULL; i++)
                 args[i - 2] = args[i];
 
@@ -347,6 +424,7 @@ void parse_input(char *input, char **args, int *background, int *delay,
 
             cmd->args = args;
 
+            // Enqueue cmd to queue
             pthread_mutex_lock(&mutex);
             enqueue(cmd, queue, token_counter);
             pthread_mutex_unlock(&mutex);
@@ -358,6 +436,10 @@ void parse_input(char *input, char **args, int *background, int *delay,
 //======================================================================================
 
 
+/**
+ * @brief Initializes the ThreadQueue struct variable queue.
+ * @param queue The ThreadQueue struct variable.
+ */
 void init_queue(struct ThreadQueue *queue) {
     queue->command_amt = 0;
 }
@@ -366,6 +448,21 @@ void init_queue(struct ThreadQueue *queue) {
 //======================================================================================
 
 
+/**
+ * @brief Enqueues the DelayedCommand cmd to the ThreadQueue queue.
+ *
+ * @param cmd Pointer to the DelayedCommand struct variable cmd, which contains the delayed
+ * command and all its corresponding data.
+ * @param queue Pointer to the ThreadQueue struct variable queue which contains an array
+ * of DelayedCommand struct variables.
+ * @param token_counter The number of tokens in cmd.
+ *
+ * @details Enqueues cmd to queue. If queue is empty, the function enqueues cmd to 
+ * queue->commands[0]. Otherwise, the function iterates through a for-loop and compares
+ * the delay_amt value of cmd and queue->commands[i]. If the delay_amt of cmd is lower and
+ * the queue is not full, the function inserts cmd into the queue. Otherwise, the function
+ * enqueues cmd into the end of queue.
+ */
 void enqueue(struct DelayedCommand *cmd, struct ThreadQueue *queue, int token_counter) {
     int inserted = 0; // flag used so no command is inserted more than once
 
@@ -412,14 +509,25 @@ void enqueue(struct DelayedCommand *cmd, struct ThreadQueue *queue, int token_co
             queue->command_amt++;
         }
     }
-
-    
 }
 
 
 //======================================================================================
 
 
+/**
+ * @brief Polls the ThreadQueue struct variable queue and executes delayed commands if
+ * their delay time amount has passed.
+ *
+ * @param t Generic pointer passed from pthread_create which contains the ThreadQueue
+ * struct variable queue.
+ *
+ * @details Obtains the queue by casting t with (struct ThreadQueue *). The function uses
+ * a simple polling method where the function sleeps for 1 second each iteration through
+ * the while loop. After, if the command at the front of the queue's delay time amount has
+ * passed, the function executes the command using check_redirection(), check_piping(), and
+ * finally execute_command().
+ */
 void *poll(void *t) {
     struct ThreadQueue *queue = ((struct ThreadQueue *) t);
 
@@ -466,6 +574,17 @@ void *poll(void *t) {
 //======================================================================================
 
 
+/**
+ * @brief Parses args to check for the redirection tokens <, >, or >>.
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ * @param input_redirect Integer flag to denote if the command contains input redirection.
+ * @param output_redirect Integer flag to denote if the command contains output redirection.
+ * @param append_redirect Integer flag to denote if the command contains append redirection.
+ * @param index Integer value to denote the index of the < token.
+ * @param outdex Integer value to denote the index of the > token.
+ * @param appenddex Integer value to denote the index of the >> token.
+ */
 void check_redirection(char **args, int *input_redirect, int *output_redirect,
                        int *append_redirect, int *index,int *outdex, int *appenddex) {
     for(int i = 0; i < MAX_ARGS; i++) {
@@ -490,8 +609,20 @@ void check_redirection(char **args, int *input_redirect, int *output_redirect,
 //======================================================================================
 
 
+/**
+ * @brief Redirects the input/output of the command.
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ * @param input_redirect Integer flag to denote if the command contains input redirection.
+ * @param output_redirect Integer flag to denote if the command contains output redirection.
+ * @param append_redirect Integer flag to denote if the command contains append redirection.
+ * @param index Integer value to denote the index of the < token.
+ * @param outdex Integer value to denote the index of the > token.
+ * @param appenddex Integer value to denote the index of the >> token.
+ */
 void redirect(char **args, int input_redirect, int output_redirect, int append_redirect,
                 int index, int outdex, int appenddex) {
+    // Redirect the command's input
     if(input_redirect == 1) {
         int in = open(args[index + 1], O_RDONLY, 0666);
         close(STDIN_FILENO);
@@ -501,6 +632,7 @@ void redirect(char **args, int input_redirect, int output_redirect, int append_r
         args[index + 1] = NULL;
     }
 
+    // Redirect the command's output 
     if(output_redirect == 1) {
         int out = open(args[outdex + 1], O_CREAT | O_WRONLY | O_TRUNC, 0666);  
         close(STDOUT_FILENO);
@@ -510,6 +642,7 @@ void redirect(char **args, int input_redirect, int output_redirect, int append_r
         args[outdex + 1] = NULL;    
     }
 
+    // Redirect the command's output and append it to the provided file
     if(append_redirect == 1) {
         int out = open(args[appenddex + 1], O_CREAT | O_WRONLY | O_APPEND, 0666);
         close(STDOUT_FILENO);
@@ -524,6 +657,13 @@ void redirect(char **args, int input_redirect, int output_redirect, int append_r
 //======================================================================================
 
 
+/**
+ * @brief Parses args to check for the pipe token |.
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ * @param pipe_flag Integer flag to denote if the command contains piping.
+ * @param pipedex Integer value to denote the index of the | token.
+ */
 void check_piping(char **args, int *pipe_flag, int *pipedex) {
     for(int i = 0; i < MAX_ARGS; i++) {
         if(args[i] == NULL)
@@ -536,9 +676,34 @@ void check_piping(char **args, int *pipe_flag, int *pipedex) {
     }
 }
 
+
 //======================================================================================
 
 
+/**
+ * @brief Pipes the user command.
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ * @param pipedex Integer value to denote the index of the | token.
+ * @param background Integer flag to denote if the command is run in the background.
+ * @param input_redirect Integer flag to denote if the command contains input redirection.
+ * @param output_redirect Integer flag to denote if the command contains output redirection.
+ * @param append_redirect Integer flag to denote if the command contains append redirection.
+ * @param index Integer value to denote the index of the < token.
+ * @param outdex Integer value to denote the index of the > token.
+ * @param appenddex Integer value to denote the index of the >> token.
+ *
+ * @details The function separates the commands before and after the pipe into command_1 and
+ * command_2. Then, the function creates a pipe using the created file descriptors. 
+ * Afterwards, pid1 is forked and in the child process the output of command_1 is set to fd[1]. 
+ * Then, the input of command_1 is redirected if applicable, and then command_1 is executed. 
+ * Next, the same happens with pid2. It is forked, the input of command_2 is set of fd[0], the 
+ * output of command_2 is redirected if applicable, and then command_2 is executed.
+ * Meanwhile, the parent process closes both of its created file descriptors. If the process is
+ * not run in the background, the parent process waits for both pid1 and pid2, if it is, the
+ * parent prints out the job number of the child processes to the terminal. Finally, the parent
+ * frees the memory allocated to command_1 and command_2.
+ */
 void pipe_command(char **args, int pipedex, int background, int input_redirect, int output_redirect,
                   int append_redirect, int index,  int outdex, int appenddex) {
     int fd[2];                      // file descriptors
@@ -630,6 +795,21 @@ void pipe_command(char **args, int pipedex, int background, int input_redirect, 
 //======================================================================================
 
 
+/**
+ * @brief Executes the user command via cd() or exit() for the built-in Linux commands
+ * cd and exit, or via exec_unix_command() for any other command.
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ * @param background Integer flag to denote if the command is run in the background.
+ * @param input_redirect Integer flag to denote if the command contains input redirection.
+ * @param output_redirect Integer flag to denote if the command contains output redirection.
+ * @param append_redirect Integer flag to denote if the command contains append redirection.
+ * @param index Integer value to denote the index of the < token.
+ * @param outdex Integer value to denote the index of the > token.
+ * @param appenddex Integer value to denote the index of the >> token.
+ * @param pipe_flag Integer flag to denote if the command contains piping.
+ * @param pipedex Integer value to denote the index of the | token.
+ */
 void execute_command(char **args, int background, int input_redirect, int output_redirect,
                      int append_redirect, int index, int outdex, int appenddex, int pipe_flag,
                      int pipedex) {
@@ -647,6 +827,14 @@ void execute_command(char **args, int background, int input_redirect, int output
 //======================================================================================
 
 
+/**
+ * @brief Executes the built-in Linux command cd using chdir().
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ *
+ * @return 0 to denote a successful directory change, 1 to denote an insuccessful
+ * directory change.
+ */
 int cd(char **args) {
     if(args[2] != NULL) {
         printf("cd: too many arguments\n");
@@ -681,6 +869,27 @@ int cd(char **args) {
 //======================================================================================
 
 
+/**
+ * @brief Executes the user command.
+ *
+ * @param args 2D char array containing the command and all its arguments.
+ * @param background Integer flag to denote if the command is run in the background.
+ * @param input_redirect Integer flag to denote if the command contains input redirection.
+ * @param output_redirect Integer flag to denote if the command contains output redirection.
+ * @param append_redirect Integer flag to denote if the command contains append redirection.
+ * @param index Integer value to denote the index of the < token.
+ * @param outdex Integer value to denote the index of the > token.
+ * @param appenddex Integer value to denote the index of the >> token.
+ * @param pipe_flag Integer flag to denote if the command contains piping.
+ * @param pipedex Integer value to denote the index of the | token.
+ *
+ * @return 0 if command successfully execited, 1 if execution was insuccessful.
+ *
+ * @details Executes the user command. The function first pipes the command if applicable. Then,
+ * the process is forked and on the child process the command is redirected if applicable, and 
+ * then executed. If the process is not run in the background, the parent process waits for the
+ * child process to finish executing the command.
+ */
 int exec_unix_command(char **args, int background, int input_redirect, int output_redirect,
                         int append_redirect, int index, int outdex, int appenddex, 
                         int pipe_flag, int pipedex) {
@@ -721,6 +930,11 @@ int exec_unix_command(char **args, int background, int input_redirect, int outpu
 //======================================================================================
 
 
+/**
+ * @brief Prevents zombie process buildup.
+ *
+ * @param signo SIGCHLD
+ */
 void sig_handler(int signo) {
     signal(SIGCHLD, sig_handler);
 
