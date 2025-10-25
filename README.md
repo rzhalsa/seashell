@@ -1,6 +1,6 @@
 # SeaShell
 
-SeaShell is a custom Linux shell written for my Operating Systems class.
+SeaShell is a custom Linux shell written in C.
 
 SeaShell supports the following features:
 
