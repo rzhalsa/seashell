@@ -1,8 +1,8 @@
-# SeaShell
+# SHrimp
 
-SeaShell is a custom Linux shell written in C.
+SHrimp is a modular Linux shell written in C.
 
-SeaShell supports the following features:
+SHrimp currently supports the following features:
 
   1. The built-in commands cd and exit.
   
@@ -37,4 +37,4 @@ The basic structure of the shell is an infinite while loop that:
 Download the source C file and compile it using your C compiler of choice. During
 development the shell was compiled with the following line:
 
-`gcc -std=c11 -o seashell seashell.c -Wall -Wextra -lphread`
+`gcc -std=c11 -o shrimp shrimp.c -Wall -Wextra -lphread`
