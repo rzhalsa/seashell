@@ -34,7 +34,12 @@ The basic structure of the shell is an infinite while loop that:
 
 ## Installation
 
-Download the source C file and compile it using your C compiler of choice. During
-development the shell was compiled with the following line:
+Download the repo ZIP file and extract it to your location of choice. To build the shell executable, navigate to the 
+root directory (where the Makefile and LICENSE are located) and enter the following command in the terminal:
 
-`gcc -std=c11 -o shrimp shrimp.c -Wall -Wextra -lphread`
+`make`
+
+## Future Planned Additions
+- Command history
+- Support for multiple pipes
+- Autocomplete by pressing the TAB key
