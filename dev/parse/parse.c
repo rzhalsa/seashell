@@ -2,9 +2,22 @@
  *
  * Contains the logic for parsing user input on the CLI.
  *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: January 23, 2026
+ * Last Modified: February 1, 2026
  */
 
 #include <sys/types.h>   // ssize_t, size_t
@@ -15,6 +28,7 @@
 #include <pthread.h>     // pthread_mutex_lock(), pthread_mutex_unlock()
 #include <errno.h>       // errno, EINTR
 #include <time.h>        // time()
+#include "config/macros.h"
 #include "types/types.h" // SHrimpCommand, DelayedCommand, ThreadQueue, SHrimpState
 #include "delay/delay.h" // enqueue()
 #include "parse/parse.h"
@@ -36,30 +50,55 @@ ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stre
  */
 char *get_input(int display) {
     size_t buf_size = 0;    // size of buffer (dynamically resized)
+    ssize_t nread;          // number of bytes read by getline()
     char *buffer = NULL;    // buffer to store read values and cwd
 
     // Display user prompt
     if(isatty(STDIN_FILENO) && display) {
-        printf("SHrimp:%s> ", getcwd(buffer, buf_size));
+        printf( ORANGE_TEXT "SHrimp" RESET_COLOR ":" BLUE_TEXT "%s" RESET_COLOR "> ", getcwd(buffer, buf_size));
         fflush(stdout);
     }
 
     // Read the user input and trim the newline off if present
-    if(getline(&buffer, &buf_size,stdin) == -1) {
+    nread = getline(&buffer, &buf_size,stdin);
+    if(nread == -1) {
         if(feof(stdin)) {
             return NULL; 
         } else if(errno == EINTR) {
             return NULL;
         } else {
-            perror("getline returned a value of -1");
+            perror(RED_TEXT "getline returned a value of -1" RESET_COLOR);
             return NULL;
         }
     } 
 
-    if(buffer[buf_size - 1] == '\n')
-        buffer[buf_size - 1] = '\0';
+    if(nread > 0 && buffer[nread - 1] == '\n')
+        buffer[nread - 1] = '\0';
 
     return buffer;
+}
+
+//======================================================================================
+
+/**
+ * @brief Splits up the raw input obtained in get_input() into separate commands, delimited by ;
+ *
+ * @param input the raw text input obtained in get_input()
+ * @param cmds Commands object used to store the list of commands
+ *
+ * @details Splits up the raw input obtained in get_input() into separate commands, delimited by ;.
+ * If a line of input does not posses any semi-colons, Commands only stores a single command to
+ * execute.
+ */
+void parse_commands(char *input, Commands *cmds) {
+    char *command;  // string to store commands
+
+    command = strtok(input, ";");
+
+    while(command != NULL) {
+        cmds->commands[cmds->command_amt++] = command;
+        command = strtok(NULL, ";");
+    }    
 }
 
 //======================================================================================
@@ -88,12 +127,12 @@ char *get_input(int display) {
  * remove "delay" and the delay time from args and subtract 2 from token_counter.
  * Finally, use enqueue() to add the DelayedCommand cmd to the ThreadQueue queue.
  */
-void parse_input(SHrimpCommand *cmd, DelayedCommand *del_cmd, ThreadQueue *queue, SHrimpState *state) {
+void parse_input(char *input, SHrimpCommand *cmd, DelayedCommand *del_cmd, ThreadQueue *queue, SHrimpState *state) {
     char *token = NULL;      // string to store tokens
     int token_counter = 0;   // indexer for args
 
     // Parse the command as args[0]
-    token = strtok(cmd->input, " \t\n");
+    token = strtok(input, " \t\n");
     if(token == NULL)
         return;
     cmd->args[token_counter++] = token;
