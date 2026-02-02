@@ -38,16 +38,32 @@
  *     2. The idea to use void(signo) to suppress the compilation warning message
  *        concerning signo being an unused variable came from Stack Overflow.
  *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * Author: Ryan McHenry
  * Created: March 21, 2025
- * Last Modified: January 23, 2026
+ * Last Modified: February 1, 2026
  */
 
+#include <pthread.h>
 #include <sys/wait.h>      // waitpid(), WNOHANG
 #include <stdlib.h>        // malloc(), free()
 #include <stdio.h>         // printf(), clearerr(), stdin
 #include <signal.h>        // SIGCHLD, signal()
 #include <errno.h>         // errno, EINTR
+#include <time.h>
+#include <unistd.h>
 #include "types/types.h"   // SHrimpCommand, DelayedCommand, ThreadQueue, SHrimpState, PollArgs
 #include "exec/pipe.h"     // check_piping()
 #include "exec/redirect.h" // check_redirection()
@@ -86,7 +102,9 @@ void sig_handler(int signo);
 int main() {
     // Vars
     int display = 1;              // flag to display the SHrimp prompt or not
+    char *input;                  // string to store CLI input
     SHrimpCommand cmd = {0};      // shell command
+    Commands commands = {0};      // list of commands in a line of input
     DelayedCommand del_cmd = {0}; // command to be delayed
     ThreadQueue queue = {0};      // queue for holding delayed commands
     SHrimpState state = {0};      // shell state
@@ -107,17 +125,19 @@ int main() {
     p_args->queue = &queue;
     p_args->state = &state;
 
-    // Init background thread running the function poll()
+    // Init background thread running the function poll(). Detach p1 as poll() is an infinite while loop.
     pthread_t p1;
     pthread_create(&p1, NULL, poll, p_args);
+    pthread_detach(p1);
 
     // Main loop of the shell
     while(1) {
+        commands.command_amt = 0;
         reset_vars(&cmd, &del_cmd);
         
         // Obtain user input
-        cmd.input = get_input(display);
-        if(cmd.input == NULL){
+        input = get_input(display);
+        if(input == NULL){
             if(errno == EINTR) {
                 display = 0;
                 clearerr(stdin);
@@ -126,29 +146,36 @@ int main() {
             break;
         }
 
+        // Parse raw input for semi-colons to determine if there are multiple commands to execute
+        parse_commands(input, &commands);
+
         display = 1;
 
-        // Parse user input
-        parse_input(&cmd, &del_cmd, &queue, &state);
-        if(cmd.args[0] == NULL || cmd.delay == 1)
-            continue; 
-        if(cmd.delay == -1) {
-            printf("delay: provide delay amount in seconds\n");
-            continue;
-        }  
+        // Parse, check redirection and piping, and then execute each command in commands
+        for(int i = 0; i < commands.command_amt; i++) {
+            reset_vars(&cmd, &del_cmd);
 
-        // Check for redirection and piping in the command
-        check_redirection(&cmd);
-        check_piping(&cmd);
+            // Parse user input
+            parse_input(commands.commands[i], &cmd, &del_cmd, &queue, &state);
+            if(cmd.args[0] == NULL || cmd.delay == 1)
+                continue; 
+            if(cmd.delay == -1) {
+                printf(RED_TEXT "delay: provide delay amount in seconds" RESET_COLOR "\n");
+                continue;
+            }  
 
-        // Execute the command
-        execute_command(&cmd, &state);        
+            // Check for redirection and piping in the command
+            check_redirection(&cmd);
+            check_piping(&cmd);
+
+            // Execute the command
+            execute_command(&cmd, &state); 
+        }
     }
     
     // Cleanup
     free(cmd.args);
     free(del_cmd.args);
-    pthread_join(p1, NULL);
 
     return 0;
 }
@@ -207,3 +234,5 @@ void sig_handler(int signo) {
     // Prevent zombie process buildup
     while(waitpid(-1, NULL, WNOHANG) > 0);
 }
+
+//======================================================================================

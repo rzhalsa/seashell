@@ -39,6 +39,18 @@ root directory (where the Makefile and LICENSE are located) and enter the follow
 
 `make`
 
+Once the binary is built, you can install it to your local bin directory by running:
+
+`make install`
+
+If you would ever like to uninstall SHrimp from your machine, you can navigate to the SHrimp root directory and enter the following command:
+
+`make uninstall`
+
+Once SHrimp is installed on your machine, you can run it from anywhere in the terminal by typing:
+
+`shrimp`
+
 ## Future Planned Additions
 - Command history
 - Support for multiple pipes

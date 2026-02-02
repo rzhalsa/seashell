@@ -1,0 +1,10 @@
+# Build directory, explicitly ignoring object files and the shrimp executable
+build/
+tmp_install/
+*.o
+*.out
+shrimp
+a.out
+
+# Clang tooling
+compile_flags.txt
