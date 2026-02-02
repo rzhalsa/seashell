@@ -18,7 +18,9 @@ SHrimp currently supports the following features:
  
   5. Commands with a single pipe.
 
-  6. Delayed commands using the prefix "delay" with a number of seconds.
+  6. Delayed commands using the prefix "delay" with a number of seconds. (e.g. delay 15 echo hi)
+
+  7. Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)
 
 The basic structure of the shell is an infinite while loop that:
   
@@ -34,20 +36,20 @@ The basic structure of the shell is an infinite while loop that:
 
 ## Installation
 
-Download the repo ZIP file and extract it to your location of choice. To build the shell executable, navigate to the 
-root directory (where the Makefile and LICENSE are located) and enter the following command in the terminal:
+Download the archive for the most recent release of SHrimp (currently **v0.4.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
+root directory (where you extracted SHrimp) and enter the following command in the terminal:
 
 `make`
 
-Once the binary is built, you can install it to your local bin directory by running:
+Once the executable binary is built, you can install it to your local bin directory by running:
 
 `make install`
 
-If you would ever like to uninstall SHrimp from your machine, you can navigate to the SHrimp root directory and enter the following command:
+If you would like to uninstall SHrimp from your machine, you can navigate to the SHrimp root directory and enter the following command:
 
 `make uninstall`
 
-Once SHrimp is installed on your machine, you can run it from anywhere in the terminal by typing:
+Once SHrimp is installed on your machine, you can run it from anywhere in the terminal by running:
 
 `shrimp`
 
@@ -55,3 +57,6 @@ Once SHrimp is installed on your machine, you can run it from anywhere in the te
 - Command history
 - Support for multiple pipes
 - Autocomplete by pressing the TAB key
+
+## License
+SHrimp is licensed under the [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) license.
