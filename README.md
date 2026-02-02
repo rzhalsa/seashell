@@ -43,11 +43,11 @@ root directory (where you extracted SHrimp) and enter the following command in t
 
 Once the executable binary is built, you can install it to your local bin directory by running:
 
-`make install`
+`sudo make install`
 
 If you would like to uninstall SHrimp from your machine, you can navigate to the SHrimp root directory and enter the following command:
 
-`make uninstall`
+`sudo make uninstall`
 
 Once SHrimp is installed on your machine, you can run it from anywhere in the terminal by running:
 
