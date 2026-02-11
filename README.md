@@ -1,30 +1,26 @@
 # SHrimp
 
-SHrimp is a modular Linux shell written in C.
+SHrimp is a lightweight Linux shell written in C.
 
 SHrimp currently supports the following features:
 
-  1. The built-in commands cd and exit.
+- The built-in commands cd and exit.
   
-  2. All simple UNIX commands.
+- All simple UNIX commands.
  
-  3. Commands running in the background using &. The shell
-     will display the job number and pid of the background
-     process.
+- Commands running in the background using &. (e.g. echo one two three &)
   
-  4. Input redirection with < and output redirection with 
-     either > or >>. Input and output redirection can be
-     specified within the same command in either order.
+- Input redirection with < and output redirection with either > or >>. Input and output redirection can be specified within the same command in either order.
  
-  5. Commands with an arbitrary amount of pipes. (e.g. echo one two three | grep one | wc -w)
+- Commands with an arbitrary amount of pipes. (e.g. echo one two three | grep one | wc -w)
 
-  6. Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)  
+- Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)  
 
 ---
 
 ### Installation
 
-Download the archive for the most recent release of SHrimp (currently **v0.4.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
+Download the archive for the most recent release of SHrimp (currently **v0.5.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
 root directory (where you extracted SHrimp) and enter the following command in the terminal:
 
 `make`
@@ -41,12 +37,14 @@ Once SHrimp is installed on your machine, you can run it from anywhere in the te
 
 `shrimp`  
 
+Alternatively, if you would like to run SHrimp without installing it to your machine, after running `make` you will find the executable binary for the shell at /build/shrimp and can simply execute that.
+
 ---
 
 ### Future Planned Additions
 - Command history
 - Autocomplete by pressing the TAB key
-- More built-in commands to add fun and unique quirks or capabilities to SHrimp  
+- More built-in commands to add fun and unique quirks and/or capabilities to SHrimp  
 
 ---
 
