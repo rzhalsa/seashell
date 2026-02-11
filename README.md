@@ -20,7 +20,7 @@ SHrimp currently supports the following features:
 
 ### Installation
 
-Download the archive for the most recent release of SHrimp (currently **v0.5.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
+Download the archive for the most recent release of SHrimp (currently **v0.5.1**) and extract it to your location of choice. To build the shell executable, navigate to the 
 root directory (where you extracted SHrimp) and enter the following command in the terminal:
 
 `make`
