@@ -1,6 +1,6 @@
-/* delay.h
+/* utils.h
  *
- * Header file for delay.c
+ * Contains generic helper functions for SHrimp. Header file for utils.c.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,16 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Author: Ryan McHenry
- * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Created: Feberuary 4, 2026
+ * Last Modified: February 4, 2026
  */
 
-#ifndef DELAY_H
-#define DELAY_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "types/types.h"
+#include <stddef.h> // size_t
 
-void enqueue(DelayedCommand *, ThreadQueue *, int);
-void *poll(void *);
+void *safe_malloc(size_t size, const char *context);
 
 #endif

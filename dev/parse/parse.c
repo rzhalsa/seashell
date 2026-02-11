@@ -17,7 +17,7 @@
  *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #include <sys/types.h>   // ssize_t, size_t
@@ -30,7 +30,6 @@
 #include <time.h>        // time()
 #include "config/macros.h"
 #include "types/types.h" // SHrimpCommand, DelayedCommand, ThreadQueue, SHrimpState
-#include "delay/delay.h" // enqueue()
 #include "parse/parse.h"
 
 ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
@@ -90,7 +89,7 @@ char *get_input(int display) {
  * If a line of input does not posses any semi-colons, Commands only stores a single command to
  * execute.
  */
-void parse_commands(char *input, Commands *cmds) {
+ParseCode parse_commands(char *input, Commands *cmds) {
     char *command;  // string to store commands
 
     command = strtok(input, ";");
@@ -99,6 +98,8 @@ void parse_commands(char *input, Commands *cmds) {
         cmds->commands[cmds->command_amt++] = command;
         command = strtok(NULL, ";");
     }    
+
+    return PARSE_OK;
 }
 
 //======================================================================================
@@ -127,14 +128,14 @@ void parse_commands(char *input, Commands *cmds) {
  * remove "delay" and the delay time from args and subtract 2 from token_counter.
  * Finally, use enqueue() to add the DelayedCommand cmd to the ThreadQueue queue.
  */
-void parse_input(char *input, SHrimpCommand *cmd, DelayedCommand *del_cmd, ThreadQueue *queue, SHrimpState *state) {
+ParseCode parse_input(char *input, SHrimpCommand *cmd) {
     char *token = NULL;      // string to store tokens
     int token_counter = 0;   // indexer for args
 
     // Parse the command as args[0]
     token = strtok(input, " \t\n");
     if(token == NULL)
-        return;
+        return PARSE_INVALID_CMD;
     cmd->args[token_counter++] = token;
 
     // Parse arguments if they exist
@@ -146,45 +147,11 @@ void parse_input(char *input, SHrimpCommand *cmd, DelayedCommand *del_cmd, Threa
     // Remove & char from args and set command to run in background
     if(strcmp(cmd->args[token_counter - 2], "&") == 0) {
         cmd->background = 1;
-        del_cmd->background = 1;
         cmd->args[token_counter - 2] = NULL;
         token_counter--;
     } 
 
-    // Check if command is delayed and extract delay amount if it is
-    if(strcmp(cmd->args[0], "delay") == 0) {
-        if(cmd->args[1] == NULL) {
-            cmd->delay = -1;
-            return;
-        }
-
-        int delay_time = atoi(cmd->args[1]);
-
-        if(delay_time < 0) {
-            cmd->delay = -1;
-        } else {
-            cmd->delay = 1;
-            del_cmd->delay_amt = delay_time + time(NULL);
-
-            // Remove "delay" and delay time from args
-            for(int i = 2; cmd->args[i] != NULL; i++)
-                cmd->args[i - 2] = cmd->args[i];
-
-            token_counter -= 2;
-
-            cmd->args[token_counter] = NULL;
-            cmd->args[token_counter - 1] = NULL;
-
-            token_counter--;
-
-            del_cmd->args = cmd->args;
-
-            // Enqueue cmd to queue
-            pthread_mutex_lock(&state->mutex);
-            enqueue(del_cmd, queue, token_counter);
-            pthread_mutex_unlock(&state->mutex);
-        }     
-    }
+    return PARSE_OK;
 }
 
 //======================================================================================

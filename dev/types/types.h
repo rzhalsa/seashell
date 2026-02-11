@@ -17,15 +17,26 @@
  *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #ifndef TYPES_H
 #define TYPES_H
 
 #include "config/macros.h" // MAX_ARGS
-#include <time.h>          // time_t
 #include <pthread.h>       // pthread_mutex_t
+
+// Enums for function return codes, codes are handled in the main SHrimp loop
+typedef enum {
+    PARSE_OK,
+    PARSE_MALLOC_FAIL,
+    PARSE_INVALID_CMD,
+    PARSE_INVALID_PIPE,
+    PARSE_INVALID_DELAY,
+    PARSE_NEGATIVE_DELAY,
+    PARSE_DELAY_OUT_OF_RANGE,
+    PARSE_CMD_OUT_OF_RANGE
+} ParseCode;
 
 // struct for handling a shell command
 typedef struct {
@@ -37,9 +48,7 @@ typedef struct {
     int index;                 // index of < token in args if it is present
     int outdex;                // index of > token in args if it is present
     int appenddex;             // index of >> token in args if it is present
-    int pipe_flag;             // flag for if a command uses a pipe
-    int pipedex;               // index of | token in args if it is present
-    int delay;                 // flag for if a command is delayed
+    int has_builtin;           // flag for if a command contains the builtin "cd" or "exit" cmds
 } SHrimpCommand; 
 
 // struct for holding all shell commands in a line of input
@@ -48,36 +57,20 @@ typedef struct {
     int command_amt;
 } Commands;
 
-// structs for handling delayed commands
-typedef struct {
-    char **args;
-    time_t delay_amt;
-    int background;          
-    int input_redirect;       
-    int output_redirect;      
-    int append_redirect;       
-    int index;                
-    int outdex;               
-    int appenddex;          
-    int pipe_flag;             
-    int pipedex;               
-} DelayedCommand;
-
-typedef struct {
-    DelayedCommand commands[MAX_DELAYED_COMMANDS];
+// struct for holding the parsed command pipeline to execute
+typedef struct {    
+    SHrimpCommand *commands[MAX_COMMANDS];
+    int background;
     int command_amt;
-} ThreadQueue;
+    int has_pipe;
+    int has_redirect;
+    int has_builtin;
+} Pipeline;
 
 // struct to hold the current state of the shell
 typedef struct {
     int job_number;           // job number counter
     pthread_mutex_t mutex;    // mutex lock
 } SHrimpState;
-
-// struct to pack together a ThreadQueue and SHrimpState object for the poll() function
-typedef struct {
-    ThreadQueue *queue;
-    SHrimpState *state;
-} PollArgs;
 
 #endif

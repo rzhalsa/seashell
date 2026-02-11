@@ -17,7 +17,7 @@
  *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #ifndef PIPE_H
@@ -25,9 +25,7 @@
 
 #include "types/types.h"
 
-void check_piping(SHrimpCommand *cmd);
-void check_delayed_piping(DelayedCommand *del_cmd);
+ParseCode check_piping(SHrimpCommand *cmd, Pipeline *pipeline);
 void pipe_command(SHrimpCommand *cmd, SHrimpState *state);
-void pipe_delayed_command(DelayedCommand *del_cmd, SHrimpState *state);
 
 #endif

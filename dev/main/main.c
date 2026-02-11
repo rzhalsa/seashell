@@ -53,7 +53,7 @@
  *
  * Author: Ryan McHenry
  * Created: March 21, 2025
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #include <pthread.h>
@@ -62,17 +62,17 @@
 #include <stdio.h>         // printf(), clearerr(), stdin
 #include <signal.h>        // SIGCHLD, signal()
 #include <errno.h>         // errno, EINTR
-#include <time.h>
-#include <unistd.h>
+#include <string.h>
+#include "config/macros.h"
 #include "types/types.h"   // SHrimpCommand, DelayedCommand, ThreadQueue, SHrimpState, PollArgs
 #include "exec/pipe.h"     // check_piping()
 #include "exec/redirect.h" // check_redirection()
 #include "exec/exec.h"     // execute_command()
 #include "parse/parse.h"   // get_input(), parse_input()
-#include "delay/delay.h"   // poll()
+#include "utils/utils.h"   // safe_malloc()
 
 // function prototypes
-void reset_vars(SHrimpCommand *, DelayedCommand *);
+void reset_vars(SHrimpCommand *cmd);
 void sig_handler(int signo);
 
 //======================================================================================
@@ -105,13 +105,12 @@ int main() {
     char *input;                  // string to store CLI input
     SHrimpCommand cmd = {0};      // shell command
     Commands commands = {0};      // list of commands in a line of input
-    DelayedCommand del_cmd = {0}; // command to be delayed
-    ThreadQueue queue = {0};      // queue for holding delayed commands
+    Pipeline pipeline = {0};      // pipeline of current command to execute
     SHrimpState state = {0};      // shell state
+    ParseCode parsecode;          // enum used to handle errors while parsing commands
 
-    // Allocate memory for cmd and del_cmd args
-    cmd.args = malloc(MAX_ARGS * sizeof(char *));
-    del_cmd.args = malloc(MAX_ARGS * sizeof(char *));
+    // Allocate memory for cmd
+    cmd.args = safe_malloc(MAX_ARGS * sizeof(char *), "cmd.args");
 
     // Set up handler to catch child processes in order to prevent zombies
     signal(SIGCHLD, sig_handler);
@@ -121,19 +120,24 @@ int main() {
     pthread_mutex_init(&state.mutex, NULL);
 
     // Init poll args
-    PollArgs *p_args = malloc(sizeof(PollArgs)); // args for poll() function
-    p_args->queue = &queue;
-    p_args->state = &state;
+    //PollArgs *p_args = safe_malloc(sizeof(PollArgs), "p_args"); // args for poll() function
+    //p_args->queue = &queue;
+    //p_args->state = &state;
 
     // Init background thread running the function poll(). Detach p1 as poll() is an infinite while loop.
-    pthread_t p1;
-    pthread_create(&p1, NULL, poll, p_args);
-    pthread_detach(p1);
+    //pthread_t p1;
+    //pthread_create(&p1, NULL, poll, p_args);
+    //pthread_detach(p1);
 
-    // Main loop of the shell
+    // Main loop of SHrimp
     while(1) {
+        // Reset for new loop iteration
         commands.command_amt = 0;
-        reset_vars(&cmd, &del_cmd);
+        pipeline.command_amt = 0;
+        pipeline.has_pipe = 0;
+        pipeline.has_redirect = 0;
+        pipeline.has_builtin = 0;
+        reset_vars(&cmd);
         
         // Obtain user input
         input = get_input(display);
@@ -147,35 +151,88 @@ int main() {
         }
 
         // Parse raw input for semi-colons to determine if there are multiple commands to execute
-        parse_commands(input, &commands);
+        parsecode = parse_commands(input, &commands);
 
         display = 1;
 
         // Parse, check redirection and piping, and then execute each command in commands
         for(int i = 0; i < commands.command_amt; i++) {
-            reset_vars(&cmd, &del_cmd);
+            reset_vars(&cmd);
 
             // Parse user input
-            parse_input(commands.commands[i], &cmd, &del_cmd, &queue, &state);
-            if(cmd.args[0] == NULL || cmd.delay == 1)
+            parsecode = parse_input(commands.commands[i], &cmd);
+
+            // Continue if the user pressed enter or if the command is delayed
+            if(cmd.args[0] == NULL)
                 continue; 
-            if(cmd.delay == -1) {
-                printf(RED_TEXT "delay: provide delay amount in seconds" RESET_COLOR "\n");
+
+            // Error handling for certain parsecode values
+            switch(parsecode) {
+                case PARSE_INVALID_DELAY:
+                    fprintf(stderr, RED_TEXT "Error: invalid delay amount. Must be a positive integer\n" RESET_COLOR);
+                    continue;
+                case PARSE_DELAY_OUT_OF_RANGE:
+                    fprintf(stderr, RED_TEXT "Error: delay amount out of range.\n" RESET_COLOR);
+                    continue;
+                case PARSE_NEGATIVE_DELAY:
+                    fprintf(stderr, RED_TEXT "Error: delay amount cannot be less than 0.\n" RESET_COLOR);
+                    continue;
+                default:
+                    break;
+            }
+
+            // Scan cmd before it is passed off to pipeline for built-in commands
+            for(int j = 0; cmd.args[j] != NULL; j++) {
+                if(strcmp(cmd.args[j], "cd") == 0 || strcmp(cmd.args[j], "exit") == 0) {
+                    if(j != 0) { // short-circuit to the next loop iteration if built-in not in the first index
+                        fprintf(stderr, RED_TEXT "Error: the built-in commands 'cd' and 'exit' must be the first token of a given command.\n" RESET_COLOR);
+                        continue;
+                    }
+                    cmd.has_builtin = 1; // true
+                }
+            }
+
+            // Parse cmd for pipes
+            parsecode = check_piping(&cmd, &pipeline);
+
+            if(parsecode == PARSE_INVALID_PIPE) {
+                fprintf(stderr, RED_TEXT "Pipe error: A pipe cannot begin or end a line\n" RESET_COLOR);
                 continue;
-            }  
+            } else if(parsecode == PARSE_CMD_OUT_OF_RANGE) {
+                // Should probably be removed and replaced with dynamic buffer size using realloc()
+                fprintf(stderr, RED_TEXT "Error: Too many commands\n" RESET_COLOR);
+            }
 
-            // Check for redirection and piping in the command
-            check_redirection(&cmd);
-            check_piping(&cmd);
+            // Check for redirection for each command in the pipeline
+            check_redirection(&pipeline);
 
-            // Execute the command
-            execute_command(&cmd, &state); 
+            // Execute the built-in commands cd or exit here if there are no pipes or redirection characters
+            // If there are, print an error message and continue to the next loop iteration
+            if(pipeline.has_builtin) {
+                if(pipeline.has_pipe || pipeline.has_redirect) {
+                    fprintf(stderr, RED_TEXT "Error: cannot contain pipes or redirection alongside a built-in command\n" RESET_COLOR);
+                    continue;
+                }
+
+                // Check if the built-in is cd and call cd() if so. Otherwise exit
+                if(strcmp(pipeline.commands[0]->args[0], "cd") == 0) {
+                    cd(pipeline.commands[0]->args);
+                    continue;
+                } else {
+                    exit(0); // will exit if a line is "exit 1 2 3", needs addressed
+                }
+            }
+            
+            // Execute the full command pipeline
+            exec_pipeline(&pipeline, &state); 
         }
     }
     
-    // Cleanup
+    // Free allocated heap memory
     free(cmd.args);
-    free(del_cmd.args);
+    for(int i = 0; i < MAX_ARGS; i++) {
+        free(pipeline.commands[i]);
+    }
 
     return 0;
 }
@@ -187,9 +244,8 @@ int main() {
  * shell loop.
  *
  * @param cmd Pointer to the SHrimpCommand struct variable to reset named cmd.
- * @param del_cmd Pointer to the DelayedCommand struct variable to reset named del_cmd.
  */
-void reset_vars(SHrimpCommand *cmd, DelayedCommand *del_cmd) {
+void reset_vars(SHrimpCommand *cmd) {
     cmd->index = -1;
     cmd->outdex = -1;
     cmd->appenddex = -1;
@@ -197,24 +253,10 @@ void reset_vars(SHrimpCommand *cmd, DelayedCommand *del_cmd) {
     cmd->input_redirect = 0;
     cmd->output_redirect = 0;
     cmd->append_redirect = 0;
-    cmd->pipe_flag = 0;
     errno = 0;
-    cmd->delay = 0;
-
-    // cmd vars
-    del_cmd->delay_amt = 0;
-    del_cmd->index = -1;
-    del_cmd->outdex = -1;
-    del_cmd->appenddex = -1;
-    del_cmd->background = 0;
-    del_cmd->input_redirect = 0;
-    del_cmd->output_redirect = 0;
-    del_cmd->append_redirect = 0;
-    del_cmd->pipe_flag = 0;
 
     for(int i = 0; i < MAX_ARGS; i++) {
         cmd->args[i] = NULL;
-        del_cmd->args[i] = NULL;
     }
 }
 

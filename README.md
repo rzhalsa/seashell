@@ -16,25 +16,13 @@ SHrimp currently supports the following features:
      either > or >>. Input and output redirection can be
      specified within the same command in either order.
  
-  5. Commands with a single pipe.
+  5. Commands with an arbitrary amount of pipes. (e.g. echo one two three | grep one | wc -w)
 
-  6. Delayed commands using the prefix "delay" with a number of seconds. (e.g. delay 15 echo hi)
+  6. Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)  
 
-  7. Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)
+---
 
-The basic structure of the shell is an infinite while loop that:
-  
-  1. Displays a shell prompt.
- 
-  2. Waits for the user to enter input. 
-  
-  3. Reads the command line.
- 
-  4. Parses the command line.
- 
-  5. Takes the appropriate action.
-
-## Installation
+### Installation
 
 Download the archive for the most recent release of SHrimp (currently **v0.4.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
 root directory (where you extracted SHrimp) and enter the following command in the terminal:
@@ -51,12 +39,16 @@ If you would like to uninstall SHrimp from your machine, you can navigate to the
 
 Once SHrimp is installed on your machine, you can run it from anywhere in the terminal by running:
 
-`shrimp`
+`shrimp`  
 
-## Future Planned Additions
+---
+
+### Future Planned Additions
 - Command history
-- Support for multiple pipes
 - Autocomplete by pressing the TAB key
+- More built-in commands to add fun and unique quirks or capabilities to SHrimp  
 
-## License
+---
+
+### License
 SHrimp is licensed under the [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) license.
