@@ -1,4 +1,8 @@
 # CHANGELOG
+### v0.5.1 - 2026-02-11
+- Fix: Added permissions block to SHrimp CI workflow.
+
+---
 
 ### v0.5.0 - 2026-02-11
 - Adds the ability for SHrimp to handle an arbitrary amount of pipes per command.
