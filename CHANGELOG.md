@@ -29,7 +29,7 @@
 
 ---
 ### Pre-v0.3.0
-Unfortunately, I do not posses detailed documentation on what changes where made when to SHrimp prior to release v0.3.0.
+Unfortunately, I do not posses detailed documentation on what changes were made when to SHrimp prior to release v0.3.0.
 
 This is what I do know:
 ### 2025-10-25
