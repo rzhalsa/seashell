@@ -11,7 +11,7 @@
 - Improves helper function documentation.
 
 ---
-### v0.4.0 - 2026-02-04
+### v0.4.0 - 2026-02-02
 - Adds the ability for SHrimp to handle multiple commands separated by semicolons.
 - Introduces a Commands struct which holds all commands in a line.
 - Updates the main shell loop to support multiple commands per line.
