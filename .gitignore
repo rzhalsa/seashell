@@ -5,6 +5,7 @@ tmp_install/
 *.out
 shrimp
 a.out
+shrimp-v*.*.*.zip
 
 # Clang tooling
 compile_flags.txt

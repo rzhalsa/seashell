@@ -1,42 +1,26 @@
 # SHrimp
 
-SHrimp is a modular Linux shell written in C.
+SHrimp is a lightweight Linux shell written in C.
 
 SHrimp currently supports the following features:
 
-  1. The built-in commands cd and exit.
+- The built-in commands cd and exit.
   
-  2. All simple UNIX commands.
+- All simple UNIX commands.
  
-  3. Commands running in the background using &. The shell
-     will display the job number and pid of the background
-     process.
+- Commands running in the background using &. (e.g. echo one two three &)
   
-  4. Input redirection with < and output redirection with 
-     either > or >>. Input and output redirection can be
-     specified within the same command in either order.
+- Input redirection with < and output redirection with either > or >>. Input and output redirection can be specified within the same command in either order.
  
-  5. Commands with a single pipe.
+- Commands with an arbitrary amount of pipes. (e.g. echo one two three | grep one | wc -w)
 
-  6. Delayed commands using the prefix "delay" with a number of seconds. (e.g. delay 15 echo hi)
+- Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)  
 
-  7. Running multiple commands in a single line separated by semicolons. (e.g. echo one; echo two; echo three)
+---
 
-The basic structure of the shell is an infinite while loop that:
-  
-  1. Displays a shell prompt.
- 
-  2. Waits for the user to enter input. 
-  
-  3. Reads the command line.
- 
-  4. Parses the command line.
- 
-  5. Takes the appropriate action.
+### Installation
 
-## Installation
-
-Download the archive for the most recent release of SHrimp (currently **v0.4.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
+Download the archive for the most recent release of SHrimp (currently **v0.5.0**) and extract it to your location of choice. To build the shell executable, navigate to the 
 root directory (where you extracted SHrimp) and enter the following command in the terminal:
 
 `make`
@@ -51,12 +35,18 @@ If you would like to uninstall SHrimp from your machine, you can navigate to the
 
 Once SHrimp is installed on your machine, you can run it from anywhere in the terminal by running:
 
-`shrimp`
+`shrimp`  
 
-## Future Planned Additions
+Alternatively, if you would like to run SHrimp without installing it to your machine, after running `make` you will find the executable binary for the shell at /build/shrimp and can simply execute that.
+
+---
+
+### Future Planned Additions
 - Command history
-- Support for multiple pipes
 - Autocomplete by pressing the TAB key
+- More built-in commands to add fun and unique quirks and/or capabilities to SHrimp  
 
-## License
+---
+
+### License
 SHrimp is licensed under the [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html) license.

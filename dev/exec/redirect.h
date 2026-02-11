@@ -17,7 +17,7 @@
  *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #ifndef REDIRECT_H
@@ -25,8 +25,7 @@
 
 #include "types/types.h"
 
-void check_redirection(SHrimpCommand *cmd);
-void check_delayed_redirection(DelayedCommand *del_cmd);
-void redirect(char **, int, int, int, int, int, int);
+void check_redirection(Pipeline *pipeline);
+void redirect(SHrimpCommand *cmd);
 
 #endif

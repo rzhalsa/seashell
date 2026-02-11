@@ -17,7 +17,7 @@
  *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #include <string.h>        // strcmp()
@@ -29,51 +29,35 @@
 //======================================================================================
 
 /**
- * @brief Parses args to check for the redirection tokens <, >, or >>.
+ * @brief Parses args within the command pipeline to check for the redirection
+ * tokens <, >, or >>.
  *
- * @param cmd SHrimpCommand object which contains all relevant vars for checking command redirection.
+ * @param pipeline Pipeline object to check redirection for.
  */
-void check_redirection(SHrimpCommand *cmd) {
-    for(int i = 0; i < MAX_ARGS; i++) {
-        if(cmd->args[i] == NULL)
-            return;
-        if(strcmp(cmd->args[i], "<") == 0) {
-            cmd->input_redirect = 1;
-            cmd->index = i;
-        } 
-        if(strcmp(cmd->args[i], ">") == 0) {
-            cmd->output_redirect = 1;
-            cmd->outdex = i;
-        } 
-        if(strcmp(cmd->args[i], ">>") == 0) {
-            cmd->append_redirect = 1;
-            cmd->appenddex = i;
-        }
-    }
-}
+void check_redirection(Pipeline *pipeline) {
+    // O(n^2), should probably be streamlined in the future if possible
+    for(int i = 0; i < pipeline->command_amt; i++) {
+        for(int j = 0; pipeline->commands[i]->args[j] != NULL; j++) {
+            // Redirect input token found
+            if(strcmp(pipeline->commands[i]->args[j], "<") == 0) {
+                pipeline->commands[i]->input_redirect = 1;
+                pipeline->commands[i]->index = j;
+                pipeline->has_redirect = 1; // true
+            }
 
-//======================================================================================
+            // Redirect output token found
+            if(strcmp(pipeline->commands[i]->args[j], ">") == 0) {
+                pipeline->commands[i]->output_redirect = 1;
+                pipeline->commands[i]->outdex = j;
+                pipeline->has_redirect = 1; // true
+            }
 
-/**
- * @brief Parses args to check for the redirection tokens <, >, or >>.
- *
- * @param del_cmd DelayedCommand object which contains all relevant vars for checking command redirection.
- */
-void check_delayed_redirection(DelayedCommand *del_cmd) {
-    for(int i = 0; i < MAX_ARGS; i++) {
-        if(del_cmd->args[i] == NULL)
-            return;
-        if(strcmp(del_cmd->args[i], "<") == 0) {
-            del_cmd->input_redirect = 1;
-            del_cmd->index = i;
-        } 
-        if(strcmp(del_cmd->args[i], ">") == 0) {
-            del_cmd->output_redirect = 1;
-            del_cmd->outdex = i;
-        } 
-        if(strcmp(del_cmd->args[i], ">>") == 0) {
-            del_cmd->append_redirect = 1;
-            del_cmd->appenddex = i;
+            // Append token found
+            if(strcmp(pipeline->commands[i]->args[j], ">>") == 0) {
+                pipeline->commands[i]->append_redirect = 1;
+                pipeline->commands[i]->appenddex = j;
+                pipeline->has_redirect = 1; // true
+            }
         }
     }
 }
@@ -83,44 +67,37 @@ void check_delayed_redirection(DelayedCommand *del_cmd) {
 /**
  * @brief Redirects the input/output of the command.
  *
- * @param args 2D char array containing the command and all its arguments.
- * @param input_redirect Integer flag to denote if the command contains input redirection.
- * @param output_redirect Integer flag to denote if the command contains output redirection.
- * @param append_redirect Integer flag to denote if the command contains append redirection.
- * @param index Integer value to denote the index of the < token.
- * @param outdex Integer value to denote the index of the > token.
- * @param appenddex Integer value to denote the index of the >> token.
+ * @param cmd SHrimpCommand object to redirect the input and/or output of.
  */
-void redirect(char **args, int input_redirect, int output_redirect, int append_redirect,
-                int index, int outdex, int appenddex) {
+void redirect(SHrimpCommand *cmd) {
     // Redirect the command's input
-    if(input_redirect == 1) {
-        int in = open(args[index + 1], O_RDONLY, 0666);
+    if(cmd->input_redirect == 1) {
+        int in = open(cmd->args[cmd->index + 1], O_RDONLY, 0666);
         close(STDIN_FILENO);
         dup2(in, STDIN_FILENO);
         close(in);
-        args[index] = NULL;
-        args[index + 1] = NULL;
+        cmd->args[cmd->index] = NULL;
+        cmd->args[cmd->index + 1] = NULL;
     }
 
     // Redirect the command's output 
-    if(output_redirect == 1) {
-        int out = open(args[outdex + 1], O_CREAT | O_WRONLY | O_TRUNC, 0666);  
+    if(cmd->output_redirect == 1) {
+        int out = open(cmd->args[cmd->outdex + 1], O_CREAT | O_WRONLY | O_TRUNC, 0666);  
         close(STDOUT_FILENO);
         dup2(out, STDOUT_FILENO);
         close(out);
-        args[outdex] = NULL;
-        args[outdex + 1] = NULL;    
+        cmd->args[cmd->outdex] = NULL;
+        cmd->args[cmd->outdex + 1] = NULL;    
     }
 
     // Redirect the command's output and append it to the provided file
-    if(append_redirect == 1) {
-        int out = open(args[appenddex + 1], O_CREAT | O_WRONLY | O_APPEND, 0666);
+    if(cmd->append_redirect == 1) {
+        int out = open(cmd->args[cmd->appenddex + 1], O_CREAT | O_WRONLY | O_APPEND, 0666);
         close(STDOUT_FILENO);
         dup2(out, STDOUT_FILENO);
         close(out);
-        args[appenddex] = NULL;
-        args[appenddex + 1] = NULL;
+        cmd->args[cmd->appenddex] = NULL;
+        cmd->args[cmd->appenddex + 1] = NULL;
     }
 }
 

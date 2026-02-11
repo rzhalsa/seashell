@@ -17,7 +17,7 @@
  *
  * Author: Ryan McHenry
  * Created: January 23, 2026
- * Last Modified: February 1, 2026
+ * Last Modified: February 10, 2026
  */
 
 #ifndef PARSE_H
@@ -25,8 +25,8 @@
 
 #include "types/types.h"
 
-char *get_input(int);
-void parse_commands(char *input, Commands *cmds);
-void parse_input(char*, SHrimpCommand *, DelayedCommand *, ThreadQueue *, SHrimpState *state);
+char *get_input(int display);
+ParseCode parse_commands(char *input, Commands *cmds);
+ParseCode parse_input(char *input, SHrimpCommand *cmd);
 
 #endif

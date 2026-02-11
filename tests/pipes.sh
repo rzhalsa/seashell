@@ -19,19 +19,33 @@
 # 
 # Author: Ryan McHenry
 # Created: February 1, 2026
-# Last Modified: February 1, 2026
+# Last Modified: February 4, 2026
 
 # Set shell binary to be the first argument
 SHRIMP_BIN=$1
 
+# Single pipe
 OUTPUT=$(echo 'echo "cats dogs birds snakes sharks" | wc -w' | "$SHRIMP_BIN")
 EXPECTED=5
 
 if [ "$OUTPUT" = "$EXPECTED" ]; then
     exit 0
 else
-    echo "pipes.sh: TEST FAILED"
-    echo "Expected: "$EXPECTED"
-    echo "Output: "$OUTPUT"
+    echo "pipes.sh: SINGLE PIPE TEST FAILED"
+    echo "Expected: "$EXPECTED""
+    echo "Output: "$OUTPUT""
+    exit 1
+fi
+
+# Multiple pipes
+OUTPUT=$(echo 'echo "one two three" | grep one | wc -w' | "$SHRIMP_BIN")
+EXPECTED=3
+
+if [ "$OUTPUT" = "$EXPECTED" ]; then
+    exit 0
+else
+    echo "pipes.sh: MULTIPLE PIPES TEST FAILED"
+    echo "Expected: "$EXPECTED""
+    echo "Output: "$OUTPUT""
     exit 1
 fi

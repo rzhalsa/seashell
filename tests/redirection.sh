@@ -32,8 +32,8 @@ rm test.txt
 
 if [ "$INPUT" -ne "$INPUT_EXPECTED" ]; then
     echo "redirection.sh: INPUT TEST FAILED"
-    echo "Expected: "$INPUT_EXPECTED"
-    echo "Output: "$INPUT"
+    echo "Expected: "$INPUT_EXPECTED""
+    echo "Output: "$INPUT""
     exit 1
 fi
 
@@ -44,8 +44,8 @@ OUTPUT_EXPECTED="crustaceans have shells"
 
 if [ "$OUTPUT" != "$OUTPUT_EXPECTED" ]; then
     echo "redirection.sh: OUTPUT TEST FAILED"
-    echo "Expected: "$OUTPUT_EXPECTED"
-    echo "Output: "$OUTPUT"
+    echo "Expected: "$OUTPUT_EXPECTED""
+    echo "Output: "$OUTPUT""
     exit 1
 fi
 
@@ -57,8 +57,8 @@ rm out.txt
 
 if [ "$APPENDPUT" != "$APPEND_EXPECTED" ]; then
     echo "redirection.sh: APPEND TEST FAILED"
-    echo "Expected: "$APPEND_EXPECTED"
-    echo "Output: "$APPENDPUT"
+    echo "Expected: "$APPEND_EXPECTED""
+    echo "Output: "$APPENDPUT""
     exit 1
 fi
 
