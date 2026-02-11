@@ -1,42 +1,6 @@
 /* main.c
  *
- * SHrimp is a Linux shell which supports the following features:
- *
- *     1. The built-in commands cd and exit.
- *
- *     2. All simple UNIX commands.
- *
- *     3. Commands running in the background using &. The shell
- *        will display the job number and pid of the background
- *        process.
- *
- *     4. Input redirection with < and output redirection with 
- *        either > or >>. Input and output redirection can be
- *        specified within the same command in either order.
- *
- *     5. Commands with a single pipe.
- *
- *     6. Delayed commands using the prefix "delay" with a number of seconds.
- *
- * The basic structure of the shell is an infinite while loop that:
- * 
- *     1. Displays a shell prompt.
- *
- *     2. Waits for the user to enter input. 
- * 
- *     3. Reads the command line.
- *
- *     4. Parses the command line.
- *
- *     5. Takes the appropriate action.
- *
- * Credits and Acknowledgements:
- *
- *     1. Many of the error messages in SHrimp are copies of the
- *        same messages in Bash.
- *
- *     2. The idea to use void(signo) to suppress the compilation warning message
- *        concerning signo being an unused variable came from Stack Overflow.
+ * Main function of SHrimp. Contains the main shell loop.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,9 +26,8 @@
 #include <stdio.h>         // printf(), clearerr(), stdin
 #include <signal.h>        // SIGCHLD, signal()
 #include <errno.h>         // errno, EINTR
-#include <string.h>
-#include "config/macros.h"
-#include "types/types.h"   // SHrimpCommand, DelayedCommand, ThreadQueue, SHrimpState, PollArgs
+#include <string.h>        // strcmp()
+#include "types/types.h"   // ParseCode, SHrimpCommand, Commands, Pipeline, SHrimpState
 #include "exec/pipe.h"     // check_piping()
 #include "exec/redirect.h" // check_redirection()
 #include "exec/exec.h"     // execute_command()
@@ -96,8 +59,7 @@ void sig_handler(int signo);
  *   4. Further parse the input to check for redirection or piping.
  *   5. If reaching this step without any errors, execute the provided command.
  *
- * After exiting the main loop of the shell, memory is freed and the background thread is
- * joined.
+ * After exiting the main loop of the shell, allocated heap memory is freed.
  */
 int main() {
     // Vars
@@ -117,17 +79,6 @@ int main() {
 
     // Init shell state
     state.job_number = 1;
-    pthread_mutex_init(&state.mutex, NULL);
-
-    // Init poll args
-    //PollArgs *p_args = safe_malloc(sizeof(PollArgs), "p_args"); // args for poll() function
-    //p_args->queue = &queue;
-    //p_args->state = &state;
-
-    // Init background thread running the function poll(). Detach p1 as poll() is an infinite while loop.
-    //pthread_t p1;
-    //pthread_create(&p1, NULL, poll, p_args);
-    //pthread_detach(p1);
 
     // Main loop of SHrimp
     while(1) {
@@ -207,7 +158,7 @@ int main() {
             check_redirection(&pipeline);
 
             // Execute the built-in commands cd or exit here if there are no pipes or redirection characters
-            // If there are, print an error message and continue to the next loop iteration
+            // If there are pipes or redirection, print an error message and continue to the next loop iteration
             if(pipeline.has_builtin) {
                 if(pipeline.has_pipe || pipeline.has_redirect) {
                     fprintf(stderr, RED_TEXT "Error: cannot contain pipes or redirection alongside a built-in command\n" RESET_COLOR);

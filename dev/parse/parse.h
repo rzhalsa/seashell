@@ -25,8 +25,8 @@
 
 #include "types/types.h"
 
-char *get_input(int);
+char *get_input(int display);
 ParseCode parse_commands(char *input, Commands *cmds);
-ParseCode parse_input(char*, SHrimpCommand *);
+ParseCode parse_input(char *input, SHrimpCommand *cmd);
 
 #endif

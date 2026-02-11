@@ -26,6 +26,5 @@
 #include "types/types.h"
 
 ParseCode check_piping(SHrimpCommand *cmd, Pipeline *pipeline);
-void pipe_command(SHrimpCommand *cmd, SHrimpState *state);
 
 #endif

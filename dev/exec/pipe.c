@@ -20,18 +20,18 @@
  * Last Modified: February 10, 2026
  */
 
-#include <sys/types.h>      // pid_t
-#include <sys/wait.h>       // waitpid()
-#include <unistd.h>         // pipe(), close(), dup2(), execvp()
-#include <stdlib.h>         // malloc(), exit(), free()
-#include <string.h>         // strcmp()
-#include <stdio.h>          // perror(), printf()
+#include <sys/types.h>     // pid_t
+#include <sys/wait.h>      // waitpid()
+#include <unistd.h>        // pipe(), close(), dup2(), execvp()
+#include <stdlib.h>        // malloc(), exit(), free()
+#include <string.h>        // strcmp()
+#include <stdio.h>         // perror(), printf()
+#include "config/macros.h" // RED_TEXT, RESET_COLOR
+#include "types/types.h"   // SHrimpCommand, DelayedCommand, SHrimpState
+#include "utils/utils.h"   // safe_malloc()
 #include "exec/pipe.h"      
-#include "config/macros.h"
-#include "types/types.h"    // SHrimpCommand, DelayedCommand, SHrimpState
-#include "utils/utils.h"    // safe_malloc()
 
-char * strdup( const char *str1 );
+char *strdup( const char *str1 );
 
 //======================================================================================
 
@@ -135,110 +135,3 @@ ParseCode check_piping(SHrimpCommand *cmd, Pipeline *pipeline) {
 }
 
 //======================================================================================
-
-/**
- * @brief Pipes the user command.
- *
- * @param cmd SHrimpCommand object containing all needed values to pipe a command.
- * @param state SHrimpState object allowing access to the shell's job_number variable.
- *
- * @details The function separates the commands before and after the pipe into command_1 and
- * command_2. Then, the function creates a pipe using the created file descriptors. 
- * Afterwards, pid1 is forked and in the child process the output of command_1 is set to fd[1]. 
- * Then, the input of command_1 is redirected if applicable, and then command_1 is executed. 
- * Next, the same happens with pid2. It is forked, the input of command_2 is set of fd[0], the 
- * output of command_2 is redirected if applicable, and then command_2 is executed.
- * Meanwhile, the parent process closes both of its created file descriptors. If the process is
- * not run in the background, the parent process waits for both pid1 and pid2, if it is, the
- * parent prints out the job number of the child processes to the terminal. Finally, the parent
- * frees the memory allocated to command_1 and command_2.
- *//*
-void pipe_command(SHrimpCommand *cmd, SHrimpState *state) {
-    int fd[2];                      // file descriptors
-    int offset = (cmd->pipedex + 1);     // offset for indexing redirection after pipe
-    char **command_1;               // command before pipe
-    char **command_2;               // command after pipe
-    int command_2_counter = 0;      // counter to index command_2 properly
-
-    command_1 = malloc(MAX_ARGS * sizeof(char *));
-    command_2 = malloc(MAX_ARGS * sizeof(char *));
-
-    for(int i = 0; i < cmd->pipedex; i++) {
-        command_1[i] = cmd->args[i];
-    }
-
-    for(int j = offset; j < MAX_ARGS; j++) {
-        if(cmd->args[j] == NULL)
-            break;
-        command_2[command_2_counter++] = cmd->args[j];
-    }
-
-    command_1[cmd->pipedex] = NULL;
-    command_2[command_2_counter] = NULL;
-
-    if(pipe(fd) < 0) {
-        perror("pipe failed");
-        exit(1);
-    }
-
-    pid_t pid1 = fork();
-    if(pid1 < 0) {
-        perror("first fork failed");
-        exit(1);
-    } else if(pid1 == 0) {
-        close(fd[0]);
-        dup2(fd[1], STDOUT_FILENO);
-        close(fd[1]);
-
-        if(cmd->input_redirect == 1 && cmd->index < cmd->pipedex) {
-            redirect(command_1, cmd->input_redirect, cmd->output_redirect, cmd->append_redirect, 
-                cmd->index, cmd->outdex, cmd->appenddex);
-        } 
-
-        execvp(command_1[0], command_1);
-        printf("%s: command not found\n", command_1[0]); 
-        exit(1);
-    } 
-
-    pid_t pid2 = fork();
-    if(pid2 < 0) {
-        perror("second fork failed");
-        exit(1);
-    } else if(pid2 == 0) {
-        close(fd[1]);
-        dup2(fd[0], STDIN_FILENO);
-        close(fd[0]);
-
-        if(cmd->output_redirect == 1 && cmd->outdex > cmd->pipedex) {
-            redirect(command_2, cmd->input_redirect, cmd->output_redirect, cmd->append_redirect, 
-                        cmd->index, cmd->outdex - offset, cmd->appenddex);
-        }
-
-        if(cmd->append_redirect == 1 && cmd->appenddex > cmd->pipedex) {
-            redirect(command_2, cmd->input_redirect, cmd->output_redirect, cmd->append_redirect, 
-                        cmd->index, cmd->outdex, cmd->appenddex - offset);
-        }
-
-        execvp(command_2[0], command_2);
-        printf("%s: command not found\n", command_2[0]); 
-        exit(1);
-    } 
-
-    // Parent
-    close(fd[0]);
-    close(fd[1]);
-    if(cmd->background == 0) {
-        waitpid(pid1, NULL, 0);
-        waitpid(pid2, NULL, 0);
-    } else {
-        printf("[%d] %d\n", state->job_number++, pid1);
-        printf("[%d] %d\n", state->job_number++, pid2);
-    }
-
-    free(command_1);
-    free(command_2);
-}
-*/
-//======================================================================================
-
-

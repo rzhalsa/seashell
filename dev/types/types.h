@@ -41,36 +41,35 @@ typedef enum {
 // struct for handling a shell command
 typedef struct {
     char **args;               // array to store parsed tokens
-    int background;            // flag for if a command runs in background
-    int input_redirect;        // flag for if a command uses input redirection 
-    int output_redirect;       // flag for if a command uses output redirection 
-    int append_redirect;       // flag for if a command uses append redirection  
+    int background;            // flag for if this command runs in the background
+    int input_redirect;        // flag for if this command uses input redirection 
+    int output_redirect;       // flag for if this command uses output redirection 
+    int append_redirect;       // flag for if this command uses append redirection  
+    int has_builtin;           // flag for if this command has a built-in command
     int index;                 // index of < token in args if it is present
     int outdex;                // index of > token in args if it is present
     int appenddex;             // index of >> token in args if it is present
-    int has_builtin;           // flag for if a command contains the builtin "cd" or "exit" cmds
 } SHrimpCommand; 
 
-// struct for holding all shell commands in a line of input
+// struct for holding all shell commands in a line of input, separated by semi colons
 typedef struct {
-    char *commands[MAX_COMMANDS];
-    int command_amt;
+    char *commands[MAX_COMMANDS];   // array of all commands in a line of input
+    int command_amt;                // amount of commands in a line of input
 } Commands;
 
 // struct for holding the parsed command pipeline to execute
 typedef struct {    
-    SHrimpCommand *commands[MAX_COMMANDS];
-    int background;
-    int command_amt;
-    int has_pipe;
-    int has_redirect;
-    int has_builtin;
+    SHrimpCommand *commands[MAX_COMMANDS];  // array of SHrimpCommand objects to execute sequentially
+    int command_amt;                        // amount of commands in this pipeline
+    int background;                         // flag for if this pipeline runs in the background
+    int has_pipe;                           // flag for if this pipeline has at least one pipe
+    int has_redirect;                       // flag for if this pipeline has at least one redirect token
+    int has_builtin;                        // flag for if this pipeline has a built-in command
 } Pipeline;
 
 // struct to hold the current state of the shell
 typedef struct {
-    int job_number;           // job number counter
-    pthread_mutex_t mutex;    // mutex lock
+    int job_number;  // job number counter
 } SHrimpState;
 
 #endif

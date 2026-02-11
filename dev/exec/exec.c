@@ -26,10 +26,10 @@
 #include <stdio.h>         // printf(), perror()
 #include <stdlib.h>        // exit()
 #include <unistd.h>        // chdir(), execvp()
-#include "config/macros.h"
+#include "config/macros.h" // RED_TEXT, RESET_COLOR
 #include "types/types.h"   // SHrimpCommand, DelayedCommand, SHrimpState
-#include "exec/exec.h"
 #include "exec/redirect.h" // redirect()
+#include "exec/exec.h"
 
 //======================================================================================
 
@@ -148,36 +148,6 @@ int exec_pipeline(Pipeline *pipeline, SHrimpState *state) {
     }
 
     return 0;
-/*
-    // Pipe if applicable
-    if(cmd->pipe_flag == 1) {
-        pipe_command(cmd, state);
-        return 0;
-    }
-
-    pid_t pid = fork();
-    if(pid == -1) {
-        perror(RED_TEXT "fork: error while forking" RESET_COLOR);
-        exit(1);     
-    } else if(pid == 0) {
-        // Redirect if applicable
-        if(cmd->input_redirect == 1 || cmd->output_redirect == 1 || cmd->append_redirect == 1) {
-            redirect(cmd->args, cmd->input_redirect, cmd->output_redirect, cmd->append_redirect, 
-                cmd->index, cmd->outdex, cmd->appenddex);
-        } 
-
-        // Execute args[0] using any arguments passed by user input
-        execvp(cmd->args[0], cmd->args);
-        printf(RED_TEXT "%s: command not found" RESET_COLOR "\n", cmd->args[0]); 
-        exit(1); 
-    } else {
-        if(cmd->background == 0)
-            waitpid(pid, NULL, 0);
-        else { 
-            
-        }
-    }
-*/
 }
 
 //======================================================================================

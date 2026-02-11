@@ -29,9 +29,10 @@
 //======================================================================================
 
 /**
- * @brief Parses args to check for the redirection tokens <, >, or >>.
+ * @brief Parses args within the command pipeline to check for the redirection
+ * tokens <, >, or >>.
  *
- * @param cmd SHrimpCommand object which contains all relevant vars for checking command redirection.
+ * @param pipeline Pipeline object to check redirection for.
  */
 void check_redirection(Pipeline *pipeline) {
     // O(n^2), should probably be streamlined in the future if possible
@@ -66,13 +67,7 @@ void check_redirection(Pipeline *pipeline) {
 /**
  * @brief Redirects the input/output of the command.
  *
- * @param args 2D char array containing the command and all its arguments.
- * @param input_redirect Integer flag to denote if the command contains input redirection.
- * @param output_redirect Integer flag to denote if the command contains output redirection.
- * @param append_redirect Integer flag to denote if the command contains append redirection.
- * @param index Integer value to denote the index of the < token.
- * @param outdex Integer value to denote the index of the > token.
- * @param appenddex Integer value to denote the index of the >> token.
+ * @param cmd SHrimpCommand object to redirect the input and/or output of.
  */
 void redirect(SHrimpCommand *cmd) {
     // Redirect the command's input

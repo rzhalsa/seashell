@@ -20,16 +20,16 @@
  * Last Modified: February 10, 2026
  */
 
-#include <sys/types.h>   // ssize_t, size_t
-#include <stdio.h>       // printf(), fflush(), feof(), perror()
-#include <string.h>      // strtok(), strcmp()
-#include <stdlib.h>      // atoi()
-#include <unistd.h>      // isatty(), getcwd()
-#include <pthread.h>     // pthread_mutex_lock(), pthread_mutex_unlock()
-#include <errno.h>       // errno, EINTR
-#include <time.h>        // time()
-#include "config/macros.h"
-#include "types/types.h" // SHrimpCommand, DelayedCommand, ThreadQueue, SHrimpState
+#include <sys/types.h>     // ssize_t, size_t
+#include <stdio.h>         // printf(), fflush(), feof(), perror()
+#include <string.h>        // strtok(), strcmp()
+#include <stdlib.h>        // atoi()
+#include <unistd.h>        // isatty(), getcwd()
+#include <pthread.h>       // pthread_mutex_lock(), pthread_mutex_unlock()
+#include <errno.h>         // errno, EINTR
+#include <time.h>          // time()
+#include "config/macros.h" // ORANGE_TEXT, BLUE_TEXT, RED_TEXT, RESET_COLOR
+#include "types/types.h"   // SHrimpCommand, SHrimpState
 #include "parse/parse.h"
 
 ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
@@ -39,7 +39,7 @@ ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stre
 /**
  * @brief Gets and returns the user input.
  *
- * @param display Integer flag to determine whether the shell prompt is displayed or not.
+ * @param display Integer flag to determine whether the SHrimp prompt is displayed or not.
  *
  * @return A pointer to a char array consisting of the user input.
  *
@@ -105,28 +105,20 @@ ParseCode parse_commands(char *input, Commands *cmds) {
 //======================================================================================
 
 /**
- * @brief Parses the user input obtained in get_input().
+ * @brief Parses the raw user input obtained in get_input() and stores it in a SHrimpCommand
+ * object.
  *
+ * @param input raw input string of the entered user command.
  * @param cmd SHrimpCommand object used to pass the obtained user input, and then
  * save the args of the command, whether the command runs in the background, and whether the
  * command is delayed.
- * @param del_cmd DelayedCommand object used to store the command if it is delayed.
- * @param queue ThreadQueue object used to enqueue the command stored to cmd if
- * the command is delayed.
- * @param state SHrimpState object used to access the shell's mutex lock 
  *
- * @details Parses the user input using strtok() and strcmp(). The function first
+ * @details Parses the raw user input using strtok() and strcmp(). The function first
  * parses the command itself as args[0], and then parses all arguments if they exist.
  *
  * The function then checks if the user designates the command to run in the 
  * background using &. If yes, remove the & character from args, set the value of
  * the integer flag named background to be 1, and subtract 1 from token_counter.
- *
- * The function then checks if args[0] is "delay", which designates that the command
- * is delayed. If so, extract the delay amount using atoi(args[1]), calculate the
- * time the delayed command will run at as the sum of delay_time + time(NULL), then
- * remove "delay" and the delay time from args and subtract 2 from token_counter.
- * Finally, use enqueue() to add the DelayedCommand cmd to the ThreadQueue queue.
  */
 ParseCode parse_input(char *input, SHrimpCommand *cmd) {
     char *token = NULL;      // string to store tokens

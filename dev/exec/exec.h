@@ -27,6 +27,5 @@
 
 int cd(char **args);
 int exec_pipeline(Pipeline *pipeline, SHrimpState *state);
-void execute_command(SHrimpCommand *cmd, SHrimpState *state);
 
 #endif
