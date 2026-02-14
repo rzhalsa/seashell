@@ -30,6 +30,7 @@
 #include <time.h>          // time()
 #include "config/macros.h" // ORANGE_TEXT, BLUE_TEXT, RED_TEXT, RESET_COLOR
 #include "types/types.h"   // SHrimpCommand, SHrimpState
+#include "utils/utils.h"
 #include "parse/parse.h"
 
 ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
@@ -54,7 +55,22 @@ char *get_input(int display) {
 
     // Display user prompt
     if(isatty(STDIN_FILENO) && display) {
-        printf( ORANGE_TEXT "SHrimp" RESET_COLOR ":" BLUE_TEXT "%s" RESET_COLOR "> ", getcwd(buffer, buf_size));
+        char *usr_home = getenv("HOME");
+        char cwd_sub[MAX_ARGS] = "";
+        cwd_sub[0] = '\0';
+        char *cwd = getcwd(buffer, buf_size);
+        strncat(cwd_sub, cwd, strlen(usr_home));
+
+        // See if the user's cwd starts with $HOME
+        if(strcmp(usr_home, cwd_sub) == 0) { // user's cwd is within $HOME, replace $HOME with ~
+            char dir[MAX_ARGS] = "~";
+            int home_len = strlen(usr_home);
+            strncat(dir, cwd + home_len, strlen(cwd) - home_len);
+            printf(ORANGE_TEXT "SHrimp" RESET_COLOR ":" BLUE_TEXT "%s" RESET_COLOR "> ", dir);
+        } else { // print whole cwd
+            printf( ORANGE_TEXT "SHrimp" RESET_COLOR ":" BLUE_TEXT "%s" RESET_COLOR "> ", getcwd(buffer, buf_size));
+        }
+        
         fflush(stdout);
     }
 
