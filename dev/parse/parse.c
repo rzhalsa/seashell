@@ -30,7 +30,6 @@
 #include <time.h>          // time()
 #include "config/macros.h" // ORANGE_TEXT, BLUE_TEXT, RED_TEXT, RESET_COLOR
 #include "types/types.h"   // SHrimpCommand, SHrimpState
-#include "utils/utils.h"
 #include "parse/parse.h"
 
 ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
