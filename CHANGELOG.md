@@ -1,6 +1,12 @@
 # CHANGELOG
+### v0.5.2 - 2026-02-14
+- Adds home env parsing to the SHrimp terminal prompt. The shell will now replace $HOME with ~. That is, instead of the prompt `SHrimp:/home/username/Documents>` you will now see `SHrimp:~/Documents>`.
+- Bugfix: Solves "crash" caused by running a command after calling the `cd` command. This was caused by not resetting cmd->has_builtin to 0 within reset_vars(), causing the shell to always call exit(0) if calling a command after `cd`. Regardless of technically being a crash or not, the shell is now working normally again.
+
+---
+
 ### v0.5.1 - 2026-02-11
-- Fix: Added permissions block to SHrimp CI workflow.
+- Hotfix: Added permissions block to SHrimp CI workflow.
 
 ---
 

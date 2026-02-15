@@ -17,12 +17,13 @@
  *
  * Author: Ryan McHenry
  * Created: Feberuary 4, 2026
- * Last Modified: February 4, 2026
+ * Last Modified: February 14, 2026
  */
 
 #include <stdio.h>          // fprintf()
 #include <stdlib.h>         // malloc()
 #include "config/macros.h"  // RED_TEXT, RESET_COLOR
+#include <string.h>         // memset()
 #include "utils/utils.h"
 
 //======================================================================================
@@ -41,6 +42,9 @@ void *safe_malloc(size_t size, const char *context) {
         fprintf(stderr, RED_TEXT "Fatal Error: malloc() failed to allocate memory for %s. Terminating SHrimp now.\n" RESET_COLOR, context);
         exit(1);
     }
+
+    // Initialize memory to zero
+    memset(ptr, 0, size);
 
     return ptr;
 }

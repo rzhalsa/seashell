@@ -17,7 +17,7 @@
  *
  * Author: Ryan McHenry
  * Created: March 21, 2025
- * Last Modified: February 10, 2026
+ * Last Modified: February 14, 2026
  */
 
 #include <pthread.h>
@@ -35,7 +35,7 @@
 #include "utils/utils.h"   // safe_malloc()
 
 // function prototypes
-void reset_vars(SHrimpCommand *cmd);
+void reset_vars(SHrimpCommand *cmd, Pipeline *pipeline);
 void sig_handler(int signo);
 
 //======================================================================================
@@ -84,11 +84,7 @@ int main() {
     while(1) {
         // Reset for new loop iteration
         commands.command_amt = 0;
-        pipeline.command_amt = 0;
-        pipeline.has_pipe = 0;
-        pipeline.has_redirect = 0;
-        pipeline.has_builtin = 0;
-        reset_vars(&cmd);
+        reset_vars(&cmd, &pipeline);
         
         // Obtain user input
         input = get_input(display);
@@ -103,12 +99,12 @@ int main() {
 
         // Parse raw input for semi-colons to determine if there are multiple commands to execute
         parsecode = parse_commands(input, &commands);
-
+        
         display = 1;
 
         // Parse, check redirection and piping, and then execute each command in commands
         for(int i = 0; i < commands.command_amt; i++) {
-            reset_vars(&cmd);
+            reset_vars(&cmd, &pipeline);
 
             // Parse user input
             parsecode = parse_input(commands.commands[i], &cmd);
@@ -159,7 +155,7 @@ int main() {
 
             // Execute the built-in commands cd or exit here if there are no pipes or redirection characters
             // If there are pipes or redirection, print an error message and continue to the next loop iteration
-            if(pipeline.has_builtin) {
+            if(pipeline.has_builtin == 1) {
                 if(pipeline.has_pipe || pipeline.has_redirect) {
                     fprintf(stderr, RED_TEXT "Error: cannot contain pipes or redirection alongside a built-in command\n" RESET_COLOR);
                     continue;
@@ -196,7 +192,7 @@ int main() {
  *
  * @param cmd Pointer to the SHrimpCommand struct variable to reset named cmd.
  */
-void reset_vars(SHrimpCommand *cmd) {
+void reset_vars(SHrimpCommand *cmd, Pipeline *pipeline) {
     cmd->index = -1;
     cmd->outdex = -1;
     cmd->appenddex = -1;
@@ -204,11 +200,18 @@ void reset_vars(SHrimpCommand *cmd) {
     cmd->input_redirect = 0;
     cmd->output_redirect = 0;
     cmd->append_redirect = 0;
+    cmd->has_builtin = 0;
     errno = 0;
 
     for(int i = 0; i < MAX_ARGS; i++) {
         cmd->args[i] = NULL;
     }
+
+    pipeline->has_builtin = 0;
+    pipeline->background = 0;
+    pipeline->has_redirect = 0;
+    pipeline->has_pipe = 0;
+    pipeline->command_amt = 0;
 }
 
 //======================================================================================
